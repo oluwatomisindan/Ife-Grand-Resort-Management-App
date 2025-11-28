@@ -1,0 +1,7 @@
+{
+  "name": "Ife Grand Resort Manager",
+  "description": "A comprehensive resort management system featuring reservations, POS, housekeeping, and AI-powered assistance.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
