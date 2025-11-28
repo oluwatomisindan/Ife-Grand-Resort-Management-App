@@ -239,7 +239,7 @@ export const Maintenance: React.FC = () => {
   const WorkOrdersView = () => (
       <div className="max-w-4xl mx-auto space-y-6">
           <h3 className="text-xl font-bold text-slate-800">Active Work Orders</h3>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
               <table className="w-full text-left">
                   <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>

@@ -8,34 +8,6 @@ import { Reservations } from './components/Reservations';
 import { Housekeeping } from './components/Housekeeping';
 import { Maintenance } from './components/Maintenance';
 import { POS } from './components/POS';
-import { AIChat } from './components/AIChat';
-import { Users } from './components/Users';
-import { Guests } from './components/Guests';
-import { Accounting } from './components/Accounting';
-import { Settings } from './components/Settings';
-import { NotificationsPage, ActivityLogPage, HelpPage } from './components/Utilities';
-import { Error404, Error403, Error500 } from './components/SystemPages';
-import { CheckIn, CheckOut } from './components/CheckInCheckOut';
-import { User } from './types';
-import { Building2, Lock, ArrowLeft, Mail, Loader2, User as UserIcon, AlertCircle, Eye, EyeOff } from 'lucide-react';
-
-// Authentication Screens Component
-const AuthScreen = () => {
-  const { signIn, signUp } = useAuth();
-  const [view, setView] = useState<'login' | 'signup' | 'forgot'>('login');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Form state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
 
     try {
       await signIn(email, password);
@@ -103,41 +75,6 @@ const AuthScreen = () => {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
-                                    placeholder="admin@iferesort.com" 
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-1">
-                            <div className="flex justify-between items-center">
-                                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Password</label>
-                                <button type="button" onClick={() => setView('forgot')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Forgot?</button>
-                            </div>
-                            <div className="relative">
-                                <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input 
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
-                                    placeholder="••••••••" 
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        <button 
-                            type="submit" 
-                            disabled={isLoading}
-                            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-lg font-bold shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-all flex justify-center items-center"
                         >
                             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
                         </button>
@@ -209,21 +146,14 @@ const AuthScreen = () => {
                             <div className="relative">
                                 <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input 
-                                    type={showPassword ? "text" : "password"}
+                                    type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                     minLength={6}
-                                    className="w-full pl-10 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none transition-all"
                                     placeholder="••••••••" 
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
                             </div>
                             <p className="text-xs text-slate-500 mt-1">Minimum 6 characters</p>
                         </div>
@@ -349,18 +279,18 @@ const AppContent = () => {
             <Route path="*" element={<Error404 />} />
             </Routes>
         </Layout>
-        {aiOpen && <AIChat onClose={() => setAiOpen(false)} />}
+        <AIChat isOpen={aiOpen} onClose={() => setAiOpen(false)} context={`User Role: ${user.role}`} />
         </Router>
     </AppProvider>
   );
 };
 
-function App() {
+const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
-}
+};
 
 export default App;

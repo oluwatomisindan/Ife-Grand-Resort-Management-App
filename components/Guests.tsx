@@ -31,7 +31,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, initialData 
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600">First Name</label>
                     <input name="firstName" required type="text" defaultValue={initialData?.firstName} className="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500" />
@@ -49,7 +49,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, initialData 
                 <label className="text-xs font-bold text-slate-600">Phone</label>
                 <input name="phone" type="tel" defaultValue={initialData?.phone} className="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600">ID Type</label>
                     <select name="idType" defaultValue={initialData?.idType} className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-blue-500">
@@ -96,7 +96,7 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, initialData 
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
                             <label className="text-[10px] font-bold text-slate-500 uppercase">Standard Rate</label>
                             <div className="relative">
@@ -190,7 +190,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ onSubmit, initialData }) => {
                 <label className="text-xs font-bold text-slate-600">Email</label>
                 <input name="email" required type="email" defaultValue={initialData?.email} className="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-600">Rate Code</label>
                     <input name="rateCode" type="text" defaultValue={initialData?.rateCode} className="w-full px-3 py-2 border rounded-lg outline-none focus:border-blue-500" />
@@ -322,7 +322,7 @@ export const Guests = () => {
                   <div className="space-y-4">
                       {isGuest ? (
                           <>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div><label className="text-xs text-slate-500 block">Email</label><span className="font-medium">{(selectedItem as Guest).email}</span></div>
                                   <div><label className="text-xs text-slate-500 block">Phone</label><span className="font-medium">{(selectedItem as Guest).phone}</span></div>
                                   <div><label className="text-xs text-slate-500 block">ID Type</label><span className="font-medium">{(selectedItem as Guest).idType}</span></div>
@@ -335,7 +335,7 @@ export const Guests = () => {
                           </>
                       ) : (
                           <>
-                              <div className="grid grid-cols-2 gap-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div><label className="text-xs text-slate-500 block">Contact Person</label><span className="font-medium">{(selectedItem as Company).contactPerson}</span></div>
                                   <div><label className="text-xs text-slate-500 block">Email</label><span className="font-medium">{(selectedItem as Company).email}</span></div>
                                   <div><label className="text-xs text-slate-500 block">Rate Code</label><span className="font-medium">{(selectedItem as Company).rateCode}</span></div>
@@ -427,7 +427,7 @@ export const Guests = () => {
             </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto">
             {activeTab === 'guests' ? (
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-50 border-b border-slate-200">

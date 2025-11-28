@@ -33,9 +33,9 @@ export const POS: React.FC = () => {
   const filteredMenu = category === 'All' ? POS_MENU : POS_MENU.filter(m => m.category === category);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-6">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-8rem)] gap-6">
       {/* Main Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px]">
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
              <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
                  <button onClick={() => setView('menu')} className={`p-2 rounded-md ${view === 'menu' ? 'bg-white shadow-sm' : 'text-slate-500'}`}><List className="w-5 h-5" /></button>
@@ -43,12 +43,12 @@ export const POS: React.FC = () => {
              </div>
              
              {view === 'menu' && (
-                 <div className="flex gap-2">
+                 <div className="flex gap-2 overflow-x-auto">
                     {categories.map(c => (
                         <button
                             key={c}
                             onClick={() => setCategory(c)}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                                 category === c ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'
                             }`}
                         >
@@ -83,7 +83,7 @@ export const POS: React.FC = () => {
                     ))}
                 </div>
             ) : (
-                <div className="h-full w-full relative bg-slate-200 rounded-xl border-2 border-dashed border-slate-300">
+                <div className="h-full w-full relative bg-slate-200 rounded-xl border-2 border-dashed border-slate-300 min-h-[400px]">
                     {POS_TABLES.map(table => (
                         <div 
                             key={table.id}
@@ -107,7 +107,7 @@ export const POS: React.FC = () => {
       </div>
 
       {/* Cart Area */}
-      <div className="w-96 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+      <div className="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-[500px] lg:h-auto">
         <div className="p-5 border-b border-slate-200 bg-white flex justify-between items-center">
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
                 Current Order

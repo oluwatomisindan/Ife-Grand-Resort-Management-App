@@ -204,7 +204,7 @@ export const Housekeeping: React.FC = () => {
                   { id: 2, task: "Deep Clean Lobby Carpets", status: "In Progress", assignee: "Sarah J." },
                   { id: 3, task: "Window Washing - Suite 301", status: "Pending", assignee: "Unassigned" },
               ].map(task => (
-                  <div key={task.id} className="flex items-center justify-between p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-slate-100 last:border-0 hover:bg-slate-50 gap-2">
                       <div className="flex items-center gap-4">
                           <div className={`w-2 h-2 rounded-full ${task.status === 'Pending' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
                           <div>
