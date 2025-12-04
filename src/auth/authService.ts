@@ -1,12 +1,8 @@
-import api from '../src/api/axios';
+import api from '../api/axios';
 import { User } from '../types';
 
-export interface UserData extends User {
-  // Add any additional fields if needed, or just use User
-}
-
 export const authService = {
-  async login(email, password) {
+  async login(email: string, password: string) {
     const response = await api.post('/auth/login', { email, password });
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
@@ -14,10 +10,12 @@ export const authService = {
     return response.data;
   },
 
-  async register(name, email, password, role) {
-    // PRD Requirement: User creation is Admin Only via /api/admin/users.
-    // Public registration is disabled.
-    throw new Error('Public registration is disabled. Please contact an Administrator.');
+  async register(name: string, email: string, password: string) {
+    const response = await api.post('/auth/register', { name, email, password });
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data;
   },
 
   async logout() {

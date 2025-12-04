@@ -136,7 +136,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpen
              </button>
            )}
         </div>
-
         {!sidebarOpen && !isMobile && (
              <button onClick={() => setSidebarOpen(true)} className="w-full py-4 text-slate-400 hover:text-white flex justify-center">
                 <Menu className="w-6 h-6" />
@@ -154,8 +153,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpen
                 {hasAccess([UserRole.SUPER_ADMIN, UserRole.FRONT_DESK]) && (
                     <SidebarItem to="/reservations" icon={CalendarRange} label="Reservations" collapsed={!sidebarOpen && !isMobile} />
                 )}
-                <SidebarItem to="/checkin" icon={Briefcase} label="Check-In" collapsed={!sidebarOpen && !isMobile} />
-                <SidebarItem to="/checkout" icon={LogOut} label="Check-Out" collapsed={!sidebarOpen && !isMobile} />
+                <SidebarItem to="/check-in" icon={Briefcase} label="Check-In" collapsed={!sidebarOpen && !isMobile} />
+                <SidebarItem to="/check-out" icon={LogOut} label="Check-Out" collapsed={!sidebarOpen && !isMobile} />
                 <SidebarItem to="/guests" icon={Users} label="Guests & Companies" collapsed={!sidebarOpen && !isMobile} />
             </SidebarGroup>
           )}

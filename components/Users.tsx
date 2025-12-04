@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Shield, X, AlertTriangle, CheckCircle, Lock, AlertCircle as AlertIcon, Eye, EyeOff } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { UserRole } from '../types';
-import { createUser } from '../auth/authService';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { UserRole, Staff } from '../types';
+import { useAppContext } from '../context/AppContext';
 
 interface UserFormData {
   name: string;
@@ -17,6 +15,7 @@ export const Users = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useParams();
+  const { staff, addStaff, updateStaff, deleteStaff } = useAppContext();
 
   const isCreate = location.pathname.includes('/create');
   const isEdit = location.pathname.includes('/edit');
@@ -31,39 +30,21 @@ export const Users = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Fetch users from Firestore
+  // Sync local form data when editing
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'users'));
-        const usersData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setUsers(usersData);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-      }
-    };
-
-    fetchUsers();
-  }, [showSuccess]);
-
-  useEffect(() => {
-    if ((isEdit || isDelete) && params.id) {
-        const user = users.find(u => u.uid === params.id);
+    if ((isEdit || isDelete) && params.id && staff.length > 0) {
+        const user = staff.find(u => u.id === params.id);
         if (user) {
             setFormData({ 
               name: user.name, 
               email: user.email, 
-              role: user.role 
+              role: user.role as UserRole
             });
         }
     }
-  }, [isEdit, isDelete, params.id, users]);
+  }, [isEdit, isDelete, params.id, staff]);
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -72,24 +53,39 @@ export const Users = () => {
 
       try {
         if (isCreate) {
-          // Create new user with Firebase Auth
           if (!formData.password || formData.password.length < 6) {
             throw new Error('Password must be at least 6 characters');
           }
+          
+          // Use AppContext to add staff
+          // Note: The backend expects 'password' in the body for creation
+          await addStaff({
+            id: `temp-${Date.now()}`, // Backend or Context should handle ID, but providing temp for now
+            name: formData.name,
+            email: formData.email,
+            role: formData.role,
+            status: 'Active',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}`,
+            password: formData.password // Pass password for backend creation
+          } as any); // Type assertion if Staff type doesn't include password (it usually doesn't on frontend)
 
-          await createUser(
-            formData.email,
-            formData.password,
-            formData.name,
-            formData.role
-          );
+        } else if (isEdit && params.id) {
+            const user = staff.find(u => u.id === params.id);
+            if (user) {
+                await updateStaff({
+                    ...user,
+                    name: formData.name,
+                    email: formData.email,
+                    role: formData.role
+                });
+            }
         } else if (isDelete && params.id) {
-          // Delete user from Firestore
-          await deleteDoc(doc(db, 'users', params.id));
+          await deleteStaff(params.id);
         }
         
         setShowSuccess(true);
       } catch (err: any) {
+        console.error(err);
         setError(err.message || 'Operation failed');
       } finally {
         setIsLoading(false);
@@ -265,13 +261,13 @@ export const Users = () => {
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                    {users.map((user) => (
-                        <tr key={user.uid} className="hover:bg-slate-50 transition-colors group">
+                    {staff.map((user) => (
+                        <tr key={user.id} className="hover:bg-slate-50 transition-colors group">
                             <td className="px-6 py-4 flex items-center gap-3">
                                 <img src={user.avatar} alt="" className="w-10 h-10 rounded-full border border-slate-200" />
                                 <div>
                                     <p className="font-semibold text-slate-800 text-sm">{user.name}</p>
-                                    <p className="text-xs text-slate-400">ID: #{user.uid.slice(0, 8)}</p>
+                                    <p className="text-xs text-slate-400">ID: #{user.id.slice(0, 8)}</p>
                                 </div>
                             </td>
                             <td className="px-6 py-4">
@@ -288,7 +284,13 @@ export const Users = () => {
                             <td className="px-6 py-4 text-right">
                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
-                                        onClick={() => navigate(`/admin/users/${user.uid}/delete`)}
+                                        onClick={() => navigate(`/admin/users/${user.id}/edit`)}
+                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                    >
+                                        <Eye className="w-4 h-4" />
+                                    </button>
+                                    <button 
+                                        onClick={() => navigate(`/admin/users/${user.id}/delete`)}
                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                                     >
                                         <Trash2 className="w-4 h-4" />

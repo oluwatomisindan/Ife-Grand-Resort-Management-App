@@ -1,15 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { auth } from '../firebase';
-import { UserData, signIn as authSignIn, signOut as authSignOut, signUp as authSignUp, getUserData } from './authService';
+import { authService } from '../src/auth/authService';
+import { User } from '../types';
 
 interface AuthContextType {
-  currentUser: UserData | null;
-  firebaseUser: FirebaseUser | null;
+  currentUser: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<UserData>;
-  signUp: (email: string, password: string, name: string) => Promise<UserData>;
-  signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signOut: () => void;
   error: string | null;
 }
 
@@ -28,65 +26,59 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<UserData | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Listen to Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
-      
-      if (user) {
-        // Fetch user data from Firestore
-        const userData = await getUserData(user.uid);
-        setCurrentUser(userData);
-      } else {
-        setCurrentUser(null);
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const user = await authService.getCurrentUser();
+          setCurrentUser(user);
+        } catch (err) {
+          console.error('Failed to restore session:', err);
+          localStorage.removeItem('token');
+        }
       }
-      
       setLoading(false);
-    });
+    };
 
-    return unsubscribe;
+    initAuth();
   }, []);
 
-  const signIn = async (email: string, password: string): Promise<UserData> => {
+  const signIn = async (email: string, password: string) => {
     try {
       setError(null);
-      const userData = await authSignIn(email, password);
-      return userData;
+      const data = await authService.login(email, password);
+      setCurrentUser(data.user);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Failed to login');
       throw err;
     }
   };
 
-  const signUp = async (email: string, password: string, name: string): Promise<UserData> => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
       setError(null);
-      const userData = await authSignUp(email, password, name);
-      return userData;
+      // Backend generates the UUID, so we don't need to pass it
+      const data = await authService.register(name, email, password);
+      // Auto-login after successful registration
+      setCurrentUser(data.user);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Failed to register');
       throw err;
     }
   };
 
-  const signOut = async (): Promise<void> => {
-    try {
-      setError(null);
-      await authSignOut();
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    }
+  const signOut = () => {
+    authService.logout();
+    setCurrentUser(null);
   };
 
   const value: AuthContextType = {
     currentUser,
-    firebaseUser,
     loading,
     signIn,
     signUp,

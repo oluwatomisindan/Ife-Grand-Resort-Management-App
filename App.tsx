@@ -27,9 +27,9 @@ const AuthScreen = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Form state
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -144,9 +144,12 @@ const AuthScreen = () => {
                     </form>
 
                     <div className="mt-6 text-center">
-                        <p className="text-sm text-slate-500">
-                            First time setup? <button onClick={() => setView('signup')} className="text-blue-600 font-bold hover:underline">Create Super Admin</button>
-                        </p>
+                        <button 
+                            onClick={() => setView('signup')} 
+                            className="text-sm text-slate-600 hover:text-blue-600 transition-colors"
+                        >
+                            First time setup? <span className="font-semibold">Create Super Admin</span>
+                        </button>
                     </div>
                 </div>
             )}

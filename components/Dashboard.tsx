@@ -63,10 +63,10 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="RevPAR" value="$142.50" change={5.2} icon={DollarSign} colorClass="bg-blue-600 text-blue-600" subtext="Revenue Per Available Room" />
-        <StatCard title="ADR" value="$185.00" change={2.1} icon={Briefcase} colorClass="bg-indigo-600 text-indigo-600" subtext="Average Daily Rate" />
+        <StatCard title="RevPAR" value="₦142.50" change={5.2} icon={DollarSign} colorClass="bg-blue-600 text-blue-600" subtext="Revenue Per Available Room" />
+        <StatCard title="ADR" value="₦185.00" change={2.1} icon={Briefcase} colorClass="bg-indigo-600 text-indigo-600" subtext="Average Daily Rate" />
         <StatCard title="Occupancy Rate" value="78.4%" change={-1.4} icon={BedDouble} colorClass="bg-teal-600 text-teal-600" subtext="Vs. 82% target" />
-        <StatCard title="Total Revenue" value="$452k" change={12.5} icon={DollarSign} colorClass="bg-slate-600 text-slate-600" subtext="YTD Revenue" />
+        <StatCard title="Total Revenue" value="₦452k" change={12.5} icon={DollarSign} colorClass="bg-slate-600 text-slate-600" subtext="YTD Revenue" />
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -109,9 +109,9 @@ const AccountantDashboard = () => {
     return (
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Accounts Receivable" value="$24,500" change={-2.4} icon={CreditCard} colorClass="bg-blue-600 text-blue-600" subtext="Pending payments" />
-                <StatCard title="Accounts Payable" value="$12,350" change={1.2} icon={Receipt} colorClass="bg-rose-600 text-rose-600" subtext="Due this week" />
-                <StatCard title="Cash on Hand" value="$185,000" change={4.5} icon={DollarSign} colorClass="bg-emerald-600 text-emerald-600" subtext="Healthy liquidity" />
+                <StatCard title="Accounts Receivable" value="₦24,500" change={-2.4} icon={CreditCard} colorClass="bg-blue-600 text-blue-600" subtext="Pending payments" />
+                <StatCard title="Accounts Payable" value="₦12,350" change={1.2} icon={Receipt} colorClass="bg-rose-600 text-rose-600" subtext="Due this week" />
+                <StatCard title="Cash on Hand" value="₦185,000" change={4.5} icon={DollarSign} colorClass="bg-emerald-600 text-emerald-600" subtext="Healthy liquidity" />
                 <StatCard title="Net Profit (MoM)" value="+15%" change={15.0} icon={Briefcase} colorClass="bg-indigo-600 text-indigo-600" subtext="Growing steady" />
             </div>
 
@@ -126,7 +126,7 @@ const AccountantDashboard = () => {
                                     <p className="text-xs text-slate-500">Corporate Booking - Acme Corp</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-bold text-slate-800">$1,250.00</p>
+                                    <p className="font-bold text-slate-800">₦1,250.00</p>
                                     <span className="text-[10px] uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Paid</span>
                                 </div>
                             </div>
@@ -463,7 +463,7 @@ const BarDashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Active Tables" value={busyTables.toString()} change={20} icon={Utensils} colorClass="bg-blue-600 text-blue-600" subtext={`${POS_TABLES.length - busyTables} Available`} />
                 <StatCard title="Pending Orders" value="4" icon={Clock} colorClass="bg-amber-500 text-amber-500" subtext="Kitchen Queue" />
-                <StatCard title="Today's Sales" value="$1,250" change={15} icon={DollarSign} colorClass="bg-emerald-600 text-emerald-600" subtext="Shift Total" />
+                <StatCard title="Today's Sales" value="₦1,250" change={15} icon={DollarSign} colorClass="bg-emerald-600 text-emerald-600" subtext="Shift Total" />
                 <StatCard title="Reservations" value={reservedTables.toString()} icon={CalendarCheck} colorClass="bg-indigo-600 text-indigo-600" subtext="Upcoming tonight" />
             </div>
 

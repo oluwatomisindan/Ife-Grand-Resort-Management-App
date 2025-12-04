@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { Save, Plus, Edit, Trash2, X, Users, Briefcase } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
-import { RoomStatus, Room, Staff } from '../types';
+import { useAuth } from '../auth/AuthContext';
+import { RoomStatus, Room, Staff, UserRole } from '../types';
 
 export const Settings = () => {
     const { rooms, addRoom, updateRoom, deleteRoom, staff, addStaff, updateStaff, deleteStaff } = useAppContext();
+    const { currentUser } = useAuth();
+    const isAdmin = currentUser?.role === UserRole.SUPER_ADMIN;
+
     const [activeTab, setActiveTab] = useState('general');
     const [showRoomModal, setShowRoomModal] = useState(false);
     const [editingRoom, setEditingRoom] = useState<Room | null>(null);
@@ -38,7 +42,7 @@ export const Settings = () => {
 
     const RoomModal = () => {
         const [formData, setFormData] = useState<Partial<Room>>(
-            editingRoom || { number: '', type: 'Standard', price: 0, status: RoomStatus.CLEAN }
+            editingRoom || { number: '', type: 'Standard', price: '', status: RoomStatus.CLEAN }
         );
 
         const handleSubmit = (e: React.FormEvent) => {
@@ -73,8 +77,8 @@ export const Settings = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Price per Night ($)</label>
-                            <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full px-3 py-2 border rounded-lg" />
+                            <label className="block text-xs font-bold text-slate-600 mb-1">Price per Night (₦)</label>
+                            <input required type="text" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
                         </div>
                         <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Save Room</button>
                     </form>
@@ -162,7 +166,7 @@ export const Settings = () => {
                                     <Save className="w-4 h-4" /> Save Changes
                                 </button>
                             )}
-                            {activeTab === 'rooms' && (
+                            {activeTab === 'rooms' && isAdmin && (
                                 <button 
                                     onClick={() => { setEditingRoom(null); setShowRoomModal(true); }}
                                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -189,9 +193,9 @@ export const Settings = () => {
                                 <div className="space-y-1">
                                     <label className="text-sm font-semibold text-slate-700">Base Currency</label>
                                     <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-white">
+                                        <option>NGN (₦)</option>
                                         <option>USD ($)</option>
                                         <option>EUR (€)</option>
-                                        <option>NGN (₦)</option>
                                     </select>
                                 </div>
                             </div>
@@ -213,10 +217,14 @@ export const Settings = () => {
                                             <tr key={room.id} className="hover:bg-slate-50">
                                                 <td className="px-4 py-3 font-medium text-slate-800">{room.number}</td>
                                                 <td className="px-4 py-3 text-sm text-slate-600">{room.type}</td>
-                                                <td className="px-4 py-3 text-sm text-slate-600">${room.price}</td>
+                                                <td className="px-4 py-3 text-sm text-slate-600">₦{room.price}</td>
                                                 <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                                    <button onClick={() => handleEditRoom(room)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-md"><Edit className="w-4 h-4" /></button>
-                                                    <button onClick={() => handleDeleteRoom(room.id)} className="text-red-600 hover:bg-red-50 p-1.5 rounded-md"><Trash2 className="w-4 h-4" /></button>
+                                                    {isAdmin && (
+                                                        <>
+                                                            <button onClick={() => handleEditRoom(room)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-md"><Edit className="w-4 h-4" /></button>
+                                                            <button onClick={() => handleDeleteRoom(room.id)} className="text-red-600 hover:bg-red-50 p-1.5 rounded-md"><Trash2 className="w-4 h-4" /></button>
+                                                        </>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}

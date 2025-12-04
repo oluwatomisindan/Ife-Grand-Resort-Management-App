@@ -1,5 +1,5 @@
 export enum UserRole {
-  SUPER_ADMIN = 'Super Admin',
+  SUPER_ADMIN = 'Administrator',
   FRONT_DESK = 'Front Desk',
   HOUSEKEEPING = 'Housekeeping',
   MAINTENANCE = 'Maintenance',
@@ -43,7 +43,7 @@ export interface Room {
   number: string;
   type: 'Standard' | 'Deluxe' | 'Suite' | 'Villa';
   status: RoomStatus;
-  price: number;
+  price: string | number;
   assignedStaffId?: string; // ID of the housekeeper
 }
 

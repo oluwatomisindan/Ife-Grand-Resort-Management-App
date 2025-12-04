@@ -61,7 +61,10 @@ export const Reservations: React.FC = () => {
               const nights = differenceInDays(end, start);
               
               if (nights > 0) {
-                  const calculatedPrice = room.price * nights;
+                  // Parse price from string (remove non-numeric chars except dot)
+                  const priceStr = String(room.price).replace(/[^0-9.]/g, '');
+                  const priceVal = parseFloat(priceStr) || 0;
+                  const calculatedPrice = priceVal * nights;
                   // Only update base price if we are creating, OR if the calculated price differs significantly (user changed dates/room)
                   // For simplicity in this demo, we update base price on form change.
                   if (isCreate) {
@@ -188,7 +191,7 @@ export const Reservations: React.FC = () => {
                       >
                           <option value="">Select a Room</option>
                           {rooms.map(r => (
-                              <option key={r.id} value={r.id}>Room {r.number} - {r.type} (${r.price}/night)</option>
+                              <option key={r.id} value={r.id}>Room {r.number} - {r.type} (₦{r.price}/night)</option>
                           ))}
                       </select>
                   </div>
@@ -215,7 +218,7 @@ export const Reservations: React.FC = () => {
                           <div className="space-y-1">
                               <label className="text-xs font-bold text-slate-500 uppercase">Fixed Price (Total)</label>
                               <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₦</span>
                                   <input 
                                     type="number" 
                                     value={basePrice} 
@@ -229,7 +232,7 @@ export const Reservations: React.FC = () => {
                               <label className="text-xs font-bold text-slate-500 uppercase">Discount Given</label>
                               <div className="relative">
                                   <div className="absolute left-3 top-1/2 -translate-y-1/2 flex gap-1 z-10">
-                                     <span className="text-slate-400 font-bold">$</span>
+                                     <span className="text-slate-400 font-bold">₦</span>
                                   </div>
                                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                                      {giveDiscount && basePrice > 0 && <span className="text-xs bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded font-bold">{discountPercent.toFixed(0)}%</span>}
@@ -246,7 +249,7 @@ export const Reservations: React.FC = () => {
                           <div className="col-span-2 space-y-1">
                               <label className="text-xs font-bold text-blue-600 uppercase">Amount Paid / Final Price</label>
                               <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 font-bold">$</span>
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 font-bold">₦</span>
                                   <input 
                                     type="number" 
                                     value={amountPaid} 
@@ -388,7 +391,7 @@ export const Reservations: React.FC = () => {
                              <span className="font-bold text-slate-800 text-lg">{room.number}</span>
                              <span className="text-xs font-medium text-slate-400 border border-slate-200 px-1.5 py-0.5 rounded">{room.type.substring(0,3).toUpperCase()}</span>
                         </div>
-                        <span className="text-xs text-slate-500 mt-1">${room.price}/night</span>
+                        <span className="text-xs text-slate-500 mt-1">₦{room.price}/night</span>
                     </div>
                     {dates.map(date => {
                         const reservation = getReservationForRoomAndDate(room.id, date);
