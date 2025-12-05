@@ -35,6 +35,10 @@ interface AppContextType {
     updateStaff: (staff: Staff) => void;
     deleteStaff: (id: string) => void;
 
+    roomRevenue: any[];
+    revenueStats: any;
+    fetchRoomRevenue: () => void;
+
     generateReport: (type: string, dateRange: {start: string, end: string}) => void;
 }
 
@@ -48,6 +52,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [companies, setCompanies] = useState<Company[]>([]);
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [staff, setStaff] = useState<Staff[]>([]);
+    const [roomRevenue, setRoomRevenue] = useState<any[]>([]);
+    const [revenueStats, setRevenueStats] = useState<any>({ total_revenue: 0, total_bookings: 0, average_revenue: 0 });
 
     // Fetch Initial Data
     useEffect(() => {
@@ -84,8 +90,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const response = await api.post('/rooms', room);
             setRooms(prev => [...prev, response.data]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error adding room:', error);
+            throw error; // Re-throw to allow UI to handle
         }
     };
     const updateRoom = async (room: Room) => {
@@ -95,16 +102,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             // For now, assuming general update.
             const response = await api.put(`/rooms/${room.id}`, room);
             setRooms(prev => prev.map(r => r.id === room.id ? response.data : r));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating room:', error);
+            throw error;
         }
     };
     const deleteRoom = async (id: string) => {
         try {
             await api.delete(`/rooms/${id}`);
             setRooms(prev => prev.filter(r => r.id !== id));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting room:', error);
+            throw error;
         }
     };
 
@@ -237,6 +246,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         alert(`${type} Report generated successfully! Download started.`);
     };
 
+    // -- Revenue Actions --
+    const fetchRoomRevenue = async () => {
+        try {
+            const [revenueRes, statsRes] = await Promise.all([
+                api.get('/revenue/rooms'),
+                api.get('/revenue/stats')
+            ]);
+            setRoomRevenue(revenueRes.data);
+            setRevenueStats(statsRes.data);
+        } catch (error) {
+            console.error('Error fetching revenue:', error);
+        }
+    };
+
     return (
         <AppContext.Provider value={{
             rooms, addRoom, updateRoom, deleteRoom,
@@ -246,6 +269,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             companies, addCompany, updateCompany, deleteCompany,
             reservations, addReservation, updateReservation,
             staff, addStaff, updateStaff, deleteStaff,
+            roomRevenue, revenueStats, fetchRoomRevenue,
             generateReport
         }}>
             {children}

@@ -33,13 +33,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
       if (token) {
         try {
+          // First, restore user from localStorage for immediate display
+          if (storedUser) {
+            setCurrentUser(JSON.parse(storedUser));
+          }
+          
+          // Then verify with server and update if needed
           const user = await authService.getCurrentUser();
           setCurrentUser(user);
+          localStorage.setItem('user', JSON.stringify(user));
         } catch (err) {
           console.error('Failed to restore session:', err);
           localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setCurrentUser(null);
         }
       }
       setLoading(false);
@@ -53,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setError(null);
       const data = await authService.login(email, password);
       setCurrentUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to login');
       throw err;
@@ -66,6 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = await authService.register(name, email, password);
       // Auto-login after successful registration
       setCurrentUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to register');
       throw err;
@@ -74,6 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = () => {
     authService.logout();
+    localStorage.removeItem('user');
     setCurrentUser(null);
   };
 

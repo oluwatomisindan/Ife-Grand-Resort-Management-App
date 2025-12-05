@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Save, Plus, Edit, Trash2, X, Users, Briefcase } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
-import { RoomStatus, Room, Staff, UserRole } from '../types';
+import { RoomStatus, RoomCategory, Room, Staff, UserRole } from '../types';
+import { ROOM_TYPES, getRoomTypesByCategory, getPriceForRoomType, getRoomPrefix } from '../config/roomTypes';
 
 export const Settings = () => {
     const { rooms, addRoom, updateRoom, deleteRoom, staff, addStaff, updateStaff, deleteStaff } = useAppContext();
@@ -42,45 +43,268 @@ export const Settings = () => {
 
     const RoomModal = () => {
         const [formData, setFormData] = useState<Partial<Room>>(
-            editingRoom || { number: '', type: 'Standard', price: '', status: RoomStatus.CLEAN }
+            editingRoom || { number: '', type: 'Standard', category: RoomCategory.STANDARD, roomType: '', price: '', status: RoomStatus.CLEAN }
         );
+        const [isSubmitting, setIsSubmitting] = useState(false);
+        const [error, setError] = useState<string | null>(null);
+        const [availableRoomTypes, setAvailableRoomTypes] = useState<any[]>([]);
+        const [maxRoomNumber, setMaxRoomNumber] = useState<number>(999);
 
-        const handleSubmit = (e: React.FormEvent) => {
-            e.preventDefault();
-            if (editingRoom) {
-                updateRoom({ ...editingRoom, ...formData } as Room);
-            } else {
-                addRoom({ ...formData, id: Date.now().toString() } as Room);
+        // Update available room types when category changes
+        React.useEffect(() => {
+            if (formData.category) {
+                const types = getRoomTypesByCategory(formData.category);
+                setAvailableRoomTypes(types);
+                
+                // Reset room type and price when category changes
+                if (!editingRoom) {
+                    setFormData(prev => ({ ...prev, roomType: '', price: '', type: 'Standard', number: '' }));
+                    setMaxRoomNumber(999);
+                }
             }
-            setShowRoomModal(false);
+        }, [formData.category]);
+
+        // Update price, type, and max room number when room type changes
+        const handleRoomTypeChange = (roomType: string) => {
+            const price = getPriceForRoomType(formData.category!, roomType);
+            
+            // Find the selected room type to get total rooms
+            const selectedType = availableRoomTypes.find(t => t.name === roomType);
+            const maxRooms = selectedType ? selectedType.totalRooms : 999;
+            
+            // Generate room prefix
+            const prefix = getRoomPrefix(roomType);
+            
+            // Set the room type name as the "type" field and reset number
+            setFormData({ ...formData, roomType, type: roomType, price, number: '' });
+            setMaxRoomNumber(maxRooms);
+        };
+
+        // Format room number with validation based on room type capacity
+        const handleRoomNumberChange = (value: string) => {
+            // Remove any non-numeric characters
+            let numericValue = value.replace(/[^0-9]/g, '');
+            
+            // Convert to number for validation
+            const numberValue = parseInt(numericValue) || 0;
+            
+            // Validate against max room number for this room type
+            if (numberValue > maxRoomNumber) {
+                setError(`Room number cannot exceed ${maxRoomNumber} for ${formData.roomType}`);
+                return;
+            } else {
+                setError(null);
+            }
+            
+            // Limit to 3 digits
+            if (numericValue.length > 3) {
+                numericValue = numericValue.slice(0, 3);
+            }
+            
+            setFormData({ ...formData, number: numericValue });
+        };
+
+        const handleSubmit = async (e: React.FormEvent) => {
+            e.preventDefault();
+            setError(null);
+            setIsSubmitting(true);
+
+            try {
+                // Validate price
+                const priceValue = typeof formData.price === 'string' 
+                    ? parseFloat(formData.price.replace(/[^0-9.]/g, ''))
+                    : formData.price;
+
+                if (!priceValue || isNaN(priceValue) || priceValue <= 0) {
+                    setError('Please select a room type to set the price');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                if (!formData.roomType) {
+                    setError('Please select a room type');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                if (!formData.number) {
+                    setError('Please enter a room number');
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                // Validate room number is within range
+                const roomNum = parseInt(formData.number);
+                if (roomNum < 1 || roomNum > maxRoomNumber) {
+                    setError(`Room number must be between 001 and ${maxRoomNumber.toString().padStart(3, '0')} for ${formData.roomType}`);
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                // Generate room prefix and combine with padded number
+                const prefix = getRoomPrefix(formData.roomType!);
+                const paddedNumber = formData.number.padStart(3, '0');
+                const finalRoomNumber = `${prefix}${paddedNumber}`;
+
+                const roomData = {
+                    ...formData,
+                    number: finalRoomNumber,
+                    type: formData.roomType, // Use room type name as the type
+                    price: priceValue,
+                    category: formData.category || RoomCategory.STANDARD,
+                    id: editingRoom?.id || `room-${Date.now()}`,
+                    status: formData.status || RoomStatus.CLEAN
+                } as Room;
+
+                if (editingRoom) {
+                    await updateRoom(roomData);
+                } else {
+                    await addRoom(roomData);
+                }
+                
+                setShowRoomModal(false);
+                setEditingRoom(null);
+            } catch (err: any) {
+                console.error('Error saving room:', err);
+                setError(err.response?.data?.message || err.message || 'Failed to save room');
+            } finally {
+                setIsSubmitting(false);
+            }
         };
 
         return (
             <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center backdrop-blur-sm p-4">
-                <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95">
+                <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                         <h3 className="font-bold text-lg">{editingRoom ? 'Edit Room' : 'Add New Room'}</h3>
-                        <button onClick={() => setShowRoomModal(false)}><X className="w-5 h-5 text-slate-400" /></button>
+                        <button onClick={() => { setShowRoomModal(false); setEditingRoom(null); }}><X className="w-5 h-5 text-slate-400" /></button>
                     </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Room Number</label>
-                            <input required type="text" value={formData.number} onChange={e => setFormData({...formData, number: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+                    
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                            {error}
                         </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Step 1: Category */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Type</label>
-                            <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="w-full px-3 py-2 border rounded-lg bg-white">
-                                <option>Standard</option>
-                                <option>Deluxe</option>
-                                <option>Suite</option>
-                                <option>Villa</option>
+                            <label className="block text-xs font-bold text-slate-600 mb-1">
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs mr-2">1</span>
+                                Room Category
+                            </label>
+                            <select 
+                                value={formData.category} 
+                                onChange={e => setFormData({...formData, category: e.target.value as RoomCategory})} 
+                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                            >
+                                <option value={RoomCategory.STANDARD}>Standard</option>
+                                <option value={RoomCategory.PREMIUM}>Premium</option>
+                                <option value={RoomCategory.SUPER_PREMIUM}>Super Premium</option>
+                                <option value={RoomCategory.SUPER_PREMIUM_PLUS}>Super Premium Plus</option>
+                                <option value={RoomCategory.EXECUTIVE}>Executive</option>
+                                <option value={RoomCategory.ROYAL_DIPLOMATIC}>Royal Diplomatic</option>
+                                <option value={RoomCategory.KINGS}>Kings</option>
                             </select>
                         </div>
+
+                        {/* Step 2: Room Type */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-600 mb-1">Price per Night (₦)</label>
-                            <input required type="text" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+                            <label className="block text-xs font-bold text-slate-600 mb-1">
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs mr-2">2</span>
+                                Room Type
+                            </label>
+                            <select 
+                                required
+                                value={formData.roomType || ''} 
+                                onChange={e => handleRoomTypeChange(e.target.value)} 
+                                className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                            >
+                                <option value="">Select Room Type</option>
+                                {availableRoomTypes.map(type => (
+                                    <option key={type.name} value={type.name}>
+                                        {type.name} - ₦{type.price.toLocaleString()}/night ({type.totalRooms} rooms)
+                                    </option>
+                                ))}
+                            </select>
+                            {formData.category && availableRoomTypes.length === 0 && (
+                                <p className="text-xs text-amber-600 mt-1">No room types available for this category</p>
+                            )}
+                            {formData.roomType && (
+                                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-xs text-blue-700 font-medium">
+                                        ✓ Room type: <span className="font-bold">{formData.roomType}</span>
+                                    </p>
+                                    <p className="text-xs text-blue-600 mt-1">
+                                        📊 Available room numbers: <span className="font-mono font-bold">001-{maxRoomNumber.toString().padStart(3, '0')}</span>
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Save Room</button>
+
+                        {/* Step 3: Room Number */}
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1">
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs mr-2">3</span>
+                                Room Number
+                            </label>
+                            <div className="relative">
+                                {formData.roomType && (
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-600 font-bold font-mono text-lg z-10">
+                                        {getRoomPrefix(formData.roomType)}
+                                    </span>
+                                )}
+                                <input 
+                                    required 
+                                    type="text" 
+                                    value={formData.number} 
+                                    onChange={e => handleRoomNumberChange(e.target.value)} 
+                                    disabled={!formData.roomType}
+                                    className={`w-full ${formData.roomType ? 'pl-20' : 'pl-3'} pr-3 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono font-bold text-lg disabled:bg-slate-100 disabled:cursor-not-allowed`}
+                                    placeholder={formData.roomType ? "001" : "Select room type first"}
+                                    maxLength={3}
+                                />
+                            </div>
+                            <p className="text-xs text-slate-500 mt-1">
+                                {formData.roomType ? (
+                                    <>
+                                        Range: <span className="font-mono font-bold">1-{maxRoomNumber}</span>
+                                        {formData.number && ` • Will be saved as: `}
+                                        {formData.number && <span className="font-mono font-bold text-blue-600">{getRoomPrefix(formData.roomType)}{formData.number.padStart(3, '0')}</span>}
+                                    </>
+                                ) : (
+                                    'Select a room type first to enable room number input'
+                                )}
+                            </p>
+                        </div>
+                        
+                        {/* Step 4: Price (Auto-filled) */}
+                        <div>
+                            <label className="block text-xs font-bold text-slate-600 mb-1">
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white text-xs mr-2">✓</span>
+                                Price per Night
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₦</span>
+                                <input 
+                                    required 
+                                    type="text" 
+                                    value={formData.price ? parseFloat(formData.price.toString()).toLocaleString() : ''} 
+                                    readOnly
+                                    className="w-full pl-8 pr-3 py-2 border rounded-lg bg-emerald-50 text-emerald-700 font-bold text-lg cursor-not-allowed" 
+                                    placeholder="Auto-filled"
+                                />
+                            </div>
+                            <p className="text-xs text-emerald-600 mt-1 font-medium">✓ Price automatically set based on room type</p>
+                        </div>
+                        
+                        <button 
+                            type="submit" 
+                            disabled={isSubmitting || !formData.roomType || !formData.number}
+                            className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+                        >
+                            {isSubmitting ? 'Saving...' : 'Save Room'}
+                        </button>
                     </form>
                 </div>
             </div>
@@ -203,12 +427,14 @@ export const Settings = () => {
                         
                         {activeTab === 'rooms' && (
                             <div className="overflow-x-auto rounded-lg border border-slate-200">
-                                <table className="w-full text-left min-w-[500px]">
+                                <table className="w-full text-left min-w-[600px]">
                                     <thead className="bg-slate-50 border-b border-slate-200">
                                         <tr>
                                             <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Room #</th>
+                                            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Category</th>
                                             <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Type</th>
                                             <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Price</th>
+                                            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
                                             <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -216,8 +442,23 @@ export const Settings = () => {
                                         {rooms.map(room => (
                                             <tr key={room.id} className="hover:bg-slate-50">
                                                 <td className="px-4 py-3 font-medium text-slate-800">{room.number}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                        {room.category}
+                                                    </span>
+                                                </td>
                                                 <td className="px-4 py-3 text-sm text-slate-600">{room.type}</td>
                                                 <td className="px-4 py-3 text-sm text-slate-600">₦{room.price}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                        room.status === 'Clean' ? 'bg-emerald-100 text-emerald-700' :
+                                                        room.status === 'Dirty' ? 'bg-rose-100 text-rose-700' :
+                                                        room.status === 'Occupied' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-slate-100 text-slate-700'
+                                                    }`}>
+                                                        {room.status}
+                                                    </span>
+                                                </td>
                                                 <td className="px-4 py-3 text-right flex justify-end gap-2">
                                                     {isAdmin && (
                                                         <>

@@ -16,6 +16,16 @@ export enum RoomStatus {
   OOO = 'Out of Order' // Out of Order
 }
 
+export enum RoomCategory {
+  STANDARD = 'Standard',
+  PREMIUM = 'Premium',
+  SUPER_PREMIUM = 'Super Premium',
+  SUPER_PREMIUM_PLUS = 'Super Premium Plus',
+  EXECUTIVE = 'Executive',
+  ROYAL_DIPLOMATIC = 'Royal Diplomatic',
+  KINGS = 'Kings'
+}
+
 export enum ReservationStatus {
   CONFIRMED = 'Confirmed',
   CHECKED_IN = 'Checked In',
@@ -42,6 +52,8 @@ export interface Room {
   id: string;
   number: string;
   type: 'Standard' | 'Deluxe' | 'Suite' | 'Villa';
+  roomType?: string; // Specific type: 'Onipopo', 'Moremi', 'Ajero', etc.
+  category: RoomCategory;
   status: RoomStatus;
   price: string | number;
   assignedStaffId?: string; // ID of the housekeeper

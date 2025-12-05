@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfToday, eachDayOfInterval, differenceInDays, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus, Filter, Calendar, Save, Trash2, X, AlertTriangle, Calculator, Tag } from 'lucide-react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ReservationStatus, Reservation } from '../types';
+import { ReservationStatus, Reservation, RoomCategory } from '../types';
 import { useAppContext } from '../context/AppContext';
 
 export const Reservations: React.FC = () => {
@@ -26,6 +26,10 @@ export const Reservations: React.FC = () => {
       checkOut: '',
       status: ReservationStatus.CONFIRMED,
   });
+
+  // Category and Type selection state
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedRoomType, setSelectedRoomType] = useState<string>('');
 
   // Discount & Pricing State
   const [basePrice, setBasePrice] = useState(0);
@@ -51,36 +55,46 @@ export const Reservations: React.FC = () => {
       }
   }, [isEdit, isCancel, params.id, reservations]);
 
-  // Recalculate Base Price when Room or Dates change (Only for Create mode or if user changes values)
+  // Update price when Room is selected (show nightly rate immediately)
   useEffect(() => {
-      if (formData.roomId && formData.checkIn && formData.checkOut) {
+      if (formData.roomId) {
           const room = rooms.find(r => r.id === formData.roomId);
           if (room) {
-              const start = parseISO(formData.checkIn);
-              const end = parseISO(formData.checkOut);
-              const nights = differenceInDays(end, start);
+              // Parse price from string (remove non-numeric chars except dot)
+              const priceStr = String(room.price).replace(/[^0-9.]/g, '');
+              const priceVal = parseFloat(priceStr) || 0;
               
-              if (nights > 0) {
-                  // Parse price from string (remove non-numeric chars except dot)
-                  const priceStr = String(room.price).replace(/[^0-9.]/g, '');
-                  const priceVal = parseFloat(priceStr) || 0;
-                  const calculatedPrice = priceVal * nights;
-                  // Only update base price if we are creating, OR if the calculated price differs significantly (user changed dates/room)
-                  // For simplicity in this demo, we update base price on form change.
-                  if (isCreate) {
+              // If dates are selected, calculate total price
+              if (formData.checkIn && formData.checkOut) {
+                  const start = parseISO(formData.checkIn);
+                  const end = parseISO(formData.checkOut);
+                  const nights = differenceInDays(end, start);
+                  
+                  if (nights > 0) {
+                      const calculatedPrice = priceVal * nights;
                       setBasePrice(calculatedPrice);
+                      
+                      // Update amount paid only if discount is not active
                       if (!giveDiscount) {
                           setAmountPaid(calculatedPrice);
                       }
-                  } else if (isEdit) {
-                      // In edit, we might want to keep original price unless explicitly changed, 
-                      // but here we recalc for dynamic behavior
-                      setBasePrice(calculatedPrice);
+                  } else {
+                      // Invalid date range, show nightly rate
+                      setBasePrice(priceVal);
+                      if (!giveDiscount) {
+                          setAmountPaid(priceVal);
+                      }
+                  }
+              } else {
+                  // No dates selected yet, show nightly rate
+                  setBasePrice(priceVal);
+                  if (!giveDiscount) {
+                      setAmountPaid(priceVal);
                   }
               }
           }
       }
-  }, [formData.roomId, formData.checkIn, formData.checkOut, rooms, isCreate, isEdit, giveDiscount]);
+  }, [formData.roomId, formData.checkIn, formData.checkOut, rooms, giveDiscount]);
 
   // Handle Checkbox Toggle
   const handleDiscountToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,17 +197,84 @@ export const Reservations: React.FC = () => {
                       </div>
                   </div>
                   <div className="space-y-1">
-                      <label className="text-sm font-semibold text-slate-700">Room Assignment</label>
+                      <label className="text-sm font-semibold text-slate-700">Room Category</label>
                       <select 
-                        value={formData.roomId}
-                        onChange={e => setFormData({...formData, roomId: e.target.value})}
+                        value={selectedCategory}
+                        onChange={e => {
+                            setSelectedCategory(e.target.value);
+                            setSelectedRoomType('');
+                            setFormData(prev => ({ ...prev, roomId: '' })); // Reset room selection
+                        }}
                         className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                       >
-                          <option value="">Select a Room</option>
-                          {rooms.map(r => (
-                              <option key={r.id} value={r.id}>Room {r.number} - {r.type} (₦{r.price}/night)</option>
-                          ))}
+                          <option value="">All Categories</option>
+                          <option value={RoomCategory.STANDARD}>Standard</option>
+                          <option value={RoomCategory.PREMIUM}>Premium</option>
+                          <option value={RoomCategory.SUPER_PREMIUM}>Super Premium</option>
+                          <option value={RoomCategory.SUPER_PREMIUM_PLUS}>Super Premium Plus</option>
+                          <option value={RoomCategory.EXECUTIVE}>Executive</option>
+                          <option value={RoomCategory.ROYAL_DIPLOMATIC}>Royal Diplomatic</option>
+                          <option value={RoomCategory.KINGS}>Kings</option>
                       </select>
+                  </div>
+
+                  {/* Room Type Filter */}
+                  <div className="space-y-1">
+                      <label className="text-sm font-semibold text-slate-700">Room Type</label>
+                      <select 
+                        value={selectedRoomType}
+                        onChange={e => {
+                            setSelectedRoomType(e.target.value);
+                            setFormData(prev => ({ ...prev, roomId: '' })); // Reset room selection
+                        }}
+                        disabled={!selectedCategory}
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                         <option value="">{selectedCategory ? 'All Types' : 'Select Category First'}</option>
+                         {selectedCategory && Array.from(new Set(
+                             rooms
+                                 .filter(r => r.category === selectedCategory)
+                                 .map(r => r.type)
+                         )).map(type => (
+                             <option key={type} value={type}>{type}</option>
+                         ))}
+                      </select> 
+                  </div>
+
+                  {/* Room Selection */}
+                  <div className="space-y-1">
+                      <label className="text-sm font-semibold text-slate-700">Select Room</label>
+                      <select 
+                        required
+                        value={formData.roomId}
+                        onChange={e => setFormData({...formData, roomId: e.target.value})}
+                        disabled={!selectedCategory}
+                        className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                         <option value="">Select a room</option>
+                         {rooms
+                             .filter(r => {
+                                 // Filter by category
+                                 if (selectedCategory && r.category !== selectedCategory) return false;
+                                 // Filter by room type if selected
+                                 if (selectedRoomType && r.type !== selectedRoomType) return false;
+                                 // Only show clean/ready rooms
+                                 return r.status === 'Clean' || r.status === 'Ready';
+                             })
+                             .map(room => (
+                                 <option key={room.id} value={room.id}>
+                                     Room {room.number} - {room.type} - ₦{room.price}/night
+                                 </option>
+                             ))
+                         }
+                      </select>
+                      {selectedCategory && rooms.filter(r => {
+                          if (selectedCategory && r.category !== selectedCategory) return false;
+                          if (selectedRoomType && r.type !== selectedRoomType) return false;
+                          return r.status === 'Clean' || r.status === 'Ready';
+                      }).length === 0 && (
+                          <p className="text-xs text-amber-600 mt-1">No available rooms for the selected filters</p>
+                      )}
                   </div>
 
                   {/* Pricing & Discount Section */}
@@ -271,6 +352,33 @@ export const Reservations: React.FC = () => {
                               </p>
                           </div>
                       </div>
+                      
+                      {/* Auto-calculation info */}
+                      {formData.roomId && basePrice > 0 && (
+                          <div className="mt-3 p-2 bg-blue-50 border border-blue-100 rounded-lg">
+                              <p className="text-xs text-blue-700 font-medium">
+                                  {formData.checkIn && formData.checkOut ? (
+                                      // Show full calculation when dates are selected
+                                      <>
+                                          ✓ Price automatically calculated: {(() => {
+                                              const room = rooms.find(r => r.id === formData.roomId);
+                                              const nights = differenceInDays(parseISO(formData.checkOut), parseISO(formData.checkIn));
+                                              const priceStr = room ? String(room.price).replace(/[^0-9.]/g, '') : '0';
+                                              const priceVal = parseFloat(priceStr) || 0;
+                                              return nights > 0 
+                                                  ? `₦${priceVal.toLocaleString()}/night × ${nights} night${nights > 1 ? 's' : ''} = ₦${basePrice.toLocaleString()}`
+                                                  : `₦${priceVal.toLocaleString()}/night`;
+                                          })()}
+                                      </>
+                                  ) : (
+                                      // Show nightly rate when only room is selected
+                                      <>
+                                          ✓ Room nightly rate: ₦{basePrice.toLocaleString()}/night (Select dates to calculate total)
+                                      </>
+                                  )}
+                              </p>
+                          </div>
+                      )}
                   </div>
                   
                   {/* Availability Check Mock */}

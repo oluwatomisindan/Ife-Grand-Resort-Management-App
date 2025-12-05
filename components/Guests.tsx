@@ -1,20 +1,42 @@
 
-import React, { useState } from 'react';
-import { Search, Plus, User, Building2, Phone, Mail, Edit, X, Save, Trash2, CreditCard, Tag } from 'lucide-react';
-import { Guest, Company, Invoice } from '../types';
+
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, User, Building2, Phone, Mail, Edit, X, Save, Trash2, CreditCard, Tag, Calendar, Bed } from 'lucide-react';
+import { Guest, Company, Invoice, Room, RoomCategory } from '../types';
 import { useAppContext } from '../context/AppContext';
 
 interface GuestFormProps {
     onSubmit: (formData: FormData) => void;
     companies: Company[];
+    rooms: Room[];
     initialData: Guest | null;
 }
 
-const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, initialData }) => {
+const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, rooms, initialData }) => {
+    // Room Selection State
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [selectedRoomType, setSelectedRoomType] = useState<string>('');
+    const [selectedRoomId, setSelectedRoomId] = useState<string>('');
+    
     // Pricing State
     const [basePrice, setBasePrice] = useState(0);
     const [amountPaid, setAmountPaid] = useState(0);
     const [giveDiscount, setGiveDiscount] = useState(false);
+
+    // Update base price when room is selected
+    useEffect(() => {
+        if (selectedRoomId) {
+            const room = rooms.find(r => r.id === selectedRoomId);
+            if (room) {
+                const priceStr = String(room.price).replace(/[^0-9.]/g, '');
+                const priceVal = parseFloat(priceStr) || 0;
+                setBasePrice(priceVal);
+                if (!giveDiscount) {
+                    setAmountPaid(priceVal);
+                }
+            }
+        }
+    }, [selectedRoomId, rooms, giveDiscount]);
 
     // Calculate discount
     const discountPercent = basePrice > 0 ? ((basePrice - amountPaid) / basePrice) * 100 : 0;
@@ -24,8 +46,10 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, initialData 
         e.preventDefault();
         const form = e.target as HTMLFormElement;
         const formData = new FormData(form);
-        // Ensure amountPaid is correctly set in formData if needed, 
-        // though the input 'name="paymentAmount"' handles it naturally.
+        // Add selected room ID to form data
+        if (selectedRoomId) {
+            formData.append('roomId', selectedRoomId);
+        }
         onSubmit(formData);
     }
 
@@ -73,6 +97,95 @@ const GuestForm: React.FC<GuestFormProps> = ({ onSubmit, companies, initialData 
                     ))}
                 </select>
             </div>
+            
+            {/* Room Selection - Only for new guests (walk-ins) */}
+            {!initialData && (
+                <>
+                    <div className="border-t border-slate-200 pt-4 mt-4">
+                        <h4 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <Bed className="w-4 h-4 text-blue-600" /> Room Assignment
+                        </h4>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-600">Room Category</label>
+                        <select 
+                            value={selectedCategory}
+                            onChange={e => {
+                                setSelectedCategory(e.target.value);
+                                setSelectedRoomType('');
+                                setSelectedRoomId('');
+                            }}
+                            className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-blue-500"
+                        >
+                            <option value="">Select Category</option>
+                            <option value={RoomCategory.STANDARD}>Standard</option>
+                            <option value={RoomCategory.PREMIUM}>Premium</option>
+                            <option value={RoomCategory.SUPER_PREMIUM}>Super Premium</option>
+                            <option value={RoomCategory.SUPER_PREMIUM_PLUS}>Super Premium Plus</option>
+                            <option value={RoomCategory.EXECUTIVE}>Executive</option>
+                            <option value={RoomCategory.ROYAL_DIPLOMATIC}>Royal Diplomatic</option>
+                            <option value={RoomCategory.KINGS}>Kings</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-600">Room Type (Optional Filter)</label>
+                        <select 
+                            value={selectedRoomType}
+                            onChange={e => {
+                                setSelectedRoomType(e.target.value);
+                                setSelectedRoomId('');
+                            }}
+                            disabled={!selectedCategory}
+                            className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400"
+                        >
+                            <option value="">{selectedCategory ? 'All Types' : 'Select Category First'}</option>
+                            {selectedCategory && Array.from(new Set(
+                                rooms
+                                    .filter(r => r.category === selectedCategory)
+                                    .map(r => r.type)
+                            )).map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-600">Select Room</label>
+                        <select 
+                            value={selectedRoomId}
+                            onChange={e => setSelectedRoomId(e.target.value)}
+                            disabled={!selectedCategory}
+                            className="w-full px-3 py-2 border rounded-lg bg-white outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400"
+                        >
+                            <option value="">Select a room</option>
+                            {rooms
+                                .filter(r => {
+                                    if (selectedCategory && r.category !== selectedCategory) return false;
+                                    if (selectedRoomType && r.type !== selectedRoomType) return false;
+                                    return r.status === 'Clean' || r.status === 'Ready';
+                                })
+                                .map(room => (
+                                    <option key={room.id} value={room.id}>
+                                        Room {room.number} - {room.type} - ₦{room.price}/night
+                                    </option>
+                                ))
+                            }
+                        </select>
+                        {selectedCategory && rooms.filter(r => {
+                            if (selectedCategory && r.category !== selectedCategory) return false;
+                            if (selectedRoomType && r.type !== selectedRoomType) return false;
+                            return r.status === 'Clean' || r.status === 'Ready';
+                        }).length === 0 && (
+                            <p className="text-xs text-amber-600 mt-1">No available rooms for the selected filters</p>
+                        )}
+                        {selectedRoomId && (
+                            <p className="text-xs text-emerald-600 mt-1 font-medium">✓ Room selected - price updated below</p>
+                        )}
+                    </div>
+                </>
+            )}
             
             {/* Payment Section - Only for new guests */}
             {!initialData && (
@@ -208,7 +321,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ onSubmit, initialData }) => {
 };
 
 export const Guests = () => {
-  const { guests, companies, addGuest, updateGuest, addCompany, updateCompany, deleteCompany, addInvoice } = useAppContext();
+  const { guests, companies, rooms, addGuest, updateGuest, addCompany, updateCompany, deleteCompany, addInvoice } = useAppContext();
   const [activeTab, setActiveTab] = useState<'guests' | 'companies'>('guests');
   const [showModal, setShowModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -381,7 +494,8 @@ export const Guests = () => {
                     {activeTab === 'guests' ? (
                         <GuestForm 
                             onSubmit={handleGuestSave} 
-                            companies={companies} 
+                            companies={companies}
+                            rooms={rooms}
                             initialData={editingItem as Guest} 
                         />
                     ) : (

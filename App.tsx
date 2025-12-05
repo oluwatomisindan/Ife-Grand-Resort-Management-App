@@ -16,6 +16,7 @@ import { Settings } from './components/Settings';
 import { NotificationsPage, ActivityLogPage, HelpPage } from './components/Utilities';
 import { Error404, Error403, Error500 } from './components/SystemPages';
 import { CheckIn, CheckOut } from './components/CheckInCheckOut';
+import { RoomRevenue } from './components/RoomRevenue';
 import { User } from './types';
 import { Building2, Lock, ArrowLeft, Mail, Loader2, User as UserIcon, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
@@ -333,6 +334,7 @@ const AppContent = () => {
             {/* Accounting */}
             <Route path="/accounting" element={<Accounting />} />
             <Route path="/accounting/invoices/create" element={<Accounting />} />
+            <Route path="/revenue/rooms" element={<RoomRevenue />} />
             
             {/* Admin */}
             <Route path="/admin/users" element={<Users />} />

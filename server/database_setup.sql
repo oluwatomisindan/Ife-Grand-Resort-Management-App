@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS rooms (
     id TEXT PRIMARY KEY,
     number TEXT UNIQUE NOT NULL,
     type TEXT NOT NULL, -- 'Single', 'Double', 'Suite'
+    room_type TEXT, -- Specific type: 'Onipopo', 'Moremi', 'Ajero', etc.
+    category TEXT NOT NULL DEFAULT 'Standard', -- 'Standard', 'Premium', 'Super Premium', 'Super Premium Plus', 'Executive', 'Royal Diplomatic', 'Kings'
     status TEXT NOT NULL DEFAULT 'Clean', -- 'Clean', 'Dirty', 'Occupied', 'Cleaning in Progress', 'Ready'
     price DECIMAL(10, 2) NOT NULL,
     assigned_to TEXT, -- ID of HK Staff
@@ -52,8 +54,19 @@ CREATE TABLE IF NOT EXISTS reservations (
     room_id TEXT REFERENCES rooms(id),
     check_in TIMESTAMP NOT NULL,
     check_out TIMESTAMP NOT NULL,
+    total_amount DECIMAL(10, 2) DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'Confirmed', -- 'Confirmed', 'Checked-In', 'Checked-Out', 'Cancelled'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Room Revenue Tracking Table
+CREATE TABLE IF NOT EXISTS room_revenue (
+    id TEXT PRIMARY KEY,
+    room_id TEXT REFERENCES rooms(id) ON DELETE CASCADE,
+    reservation_id TEXT REFERENCES reservations(id),
+    amount DECIMAL(10, 2) NOT NULL,
+    revenue_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS maintenance_tickets (
@@ -93,8 +106,8 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Seed some Rooms
-INSERT INTO rooms (id, number, type, status, price) VALUES
-('room-101', '101', 'Single', 'Clean', 100.00),
-('room-102', '102', 'Double', 'Dirty', 150.00),
-('room-201', '201', 'Suite', 'Clean', 300.00)
+INSERT INTO rooms (id, number, type, category, status, price) VALUES
+('room-101', '101', 'Single', 'Standard', 'Clean', 100.00),
+('room-102', '102', 'Double', 'Premium', 'Dirty', 150.00),
+('room-201', '201', 'Suite', 'Super Premium', 'Clean', 300.00)
 ON CONFLICT (id) DO NOTHING;

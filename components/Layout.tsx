@@ -18,7 +18,8 @@ import {
   Briefcase,
   UserCog,
   FileText,
-  Activity
+  Activity,
+  TrendingUp
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 
@@ -177,6 +178,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, onOpen
                     <SidebarItem to="/admin/users" icon={UserCog} label="User Management" collapsed={!sidebarOpen && !isMobile} />
                 )}
                 <SidebarItem to="/accounting" icon={Receipt} label="Accounting" collapsed={!sidebarOpen && !isMobile} />
+                <SidebarItem to="/revenue/rooms" icon={TrendingUp} label="Room Revenue" collapsed={!sidebarOpen && !isMobile} />
                 {hasAccess([UserRole.SUPER_ADMIN]) && (
                     <SidebarItem to="/admin/settings" icon={Settings} label="System Settings" collapsed={!sidebarOpen && !isMobile} />
                 )}
